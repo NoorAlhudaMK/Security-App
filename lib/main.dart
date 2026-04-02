@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
 
         BlocProvider<ProfileBloc>(create: (context) => ProfileBloc()),
 
+
         BlocProvider<DashboardBloc>(
           create: (context) =>
               DashboardBloc(DashboardRepository())..add(FetchDashboardData()),
