@@ -1,50 +1,90 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:security_app/Core/CacheManager/cache_manager.dart';
+import 'package:security_app/Data/Repository/auth_repository.dart';
+import 'package:security_app/Data/Repository/shift_repository.dart';
+import 'package:security_app/Data/Repository/visitors_repository.dart';
 
-import 'Core/Repository/dashboard_repository.dart';
 import 'Features/Auth/BLoC/auth_bloc.dart';
 import 'Features/Auth/View/login_view.dart';
 import 'Features/Dashboard/BLoC/dashboard_bloc.dart';
-import 'Features/Dashboard/BLoC/dashboard_event.dart';
 import 'Features/MainPage/BLoC/home_bloc.dart';
-import 'Features/MainPage/View/main_home_page.dart';
 import 'Features/Profile/BLoC/profile_bloc.dart';
+import 'Features/Visitors/ViewVisitors/BLoC/visitors_bloc.dart';
+import 'Features/Visitors/ViewVisitors/BLoC/visitors_event.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  checkUserToken();
-  await FirebaseMessaging.instance.subscribeToTopic('security_guards');
-  runApp(const MyApp());
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  await requestNotificationPermission();
+
+  try {
+    await FirebaseMessaging.instance.subscribeToTopic('security_guards');
+  } catch (e) {
+    if (kDebugMode) {
+      print("⚠️ خطأ أثناء الاشتراك في التوبيك: $e");
+    }
+  }
+
+  String? token = await CacheManager.getToken();
+
+  if (token != null) {
+    try {
+      // Add your session validation logic here if needed
+    } catch (e) {
+      if (kDebugMode) {
+        print("خطأ في التحقق من الجلسة عند التشغيل: $e");
+      }
+      await CacheManager.clearAll();
+    }
+  }
+
+  initializeDateFormatting('ar').then((_) {
+    runApp(MyApp(isLoggedIn: token != null));
+    FlutterNativeSplash.remove();
+  });
 }
 
-void checkUserToken() async {
+Future<void> requestNotificationPermission() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
+    announcement: false,
     badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
     sound: true,
   );
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    String? token = await messaging.getToken();
-
-    if (token != null) {
-      print("✅ تم إنشاء معرف الجهاز بنجاح:");
-      print("FCM Token: $token");
-    } else {
-      print("❌ فشل الحصول على المعرف.");
+    String? fcmToken = await messaging.getToken();
+    if (kDebugMode) {
+      print("✅ تم منح صلاحية الإشعارات بنجاح.");
+      print("🔔 FCM Token: $fcmToken");
     }
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    if (kDebugMode) print("✅ تم منح صلاحية مؤقتة للإشعارات.");
   } else {
-    print("⚠️ المستخدم رفض إعطاء صلاحية الإشعارات.");
+    if (kDebugMode) print("⚠️ تم رفض صلاحية الإشعارات.");
   }
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +92,21 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider<HomeBloc>(create: (context) => HomeBloc()),
 
-        BlocProvider<AuthBloc>(create: (context) => AuthBloc()),
+        BlocProvider<AuthBloc>(
+          create: (context) => AuthBloc(authRepository: AuthRepository()),
+        ),
 
-        BlocProvider<ProfileBloc>(create: (context) => ProfileBloc()),
-
+        BlocProvider<ProfileBloc>(create: (context) => ProfileBloc(shiftRepository: ShiftRepository())),
 
         BlocProvider<DashboardBloc>(
           create: (context) =>
-              DashboardBloc(DashboardRepository())..add(FetchDashboardData()),
+          DashboardBloc(),
+        ),
+
+        BlocProvider<VisitorsBloc>(
+          create: (context) =>
+          VisitorsBloc( VisitorsRepository())
+            ..add(FetchVisitors()),
         ),
       ],
       child: MaterialApp(
@@ -67,7 +114,7 @@ class MyApp extends StatelessWidget {
         title: 'Security App',
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
-        home: const MainHomePage(),
+        home: LoginView(),
       ),
     );
   }

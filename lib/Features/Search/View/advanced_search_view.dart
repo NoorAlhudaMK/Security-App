@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../../../Core/Colors/app_colors.dart';
-
-
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../Core/Colors/app_colors.dart';
+import '../../../Core/UIConstants/aivio_border_radius.dart';
+import '../../../Core/UIConstants/aivio_font_sizes.dart';
+import '../../../Core/UIConstants/aivio_icon_sizes.dart';
+import '../../../Core/UIConstants/aivio_spacing.dart';
+import '../../../../Data/Repository/advanced_search_repository.dart';
+import '../../../../Data/Models/resident_model.dart';
 import '../BLoC/advanced_search_bloc.dart';
 import '../BLoC/advanced_search_event.dart';
 import '../BLoC/advanced_search_state.dart';
@@ -18,7 +20,9 @@ class AdvancedSearchView extends StatelessWidget {
     final colors = AppColors();
 
     return BlocProvider(
-      create: (context) => AdvancedSearchBloc(),
+      create: (context) => AdvancedSearchBloc(
+        repository: AdvancedSearchRepository(),
+      ),
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
@@ -32,7 +36,7 @@ class AdvancedSearchView extends StatelessWidget {
               style: TextStyle(
                 color: colors.textMain,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: AppFontSizes.headingSmall,
               ),
             ),
           ),
@@ -42,12 +46,10 @@ class AdvancedSearchView extends StatelessWidget {
               _buildCategoryFilter(colors),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: AppSpacing.symmetricH,
                   children: [
-                    const SizedBox(height: 20),
-                    _buildQuickSearchSection(colors),
-                    const SizedBox(height: 20),
-                    _buildSectionTitle("النتائج الأخيرة", colors),
+                    const SizedBox(height: AppSpacing.sm),
+                    _buildSectionTitle("النتائج", colors),
                     _buildResultsList(colors),
                   ],
                 ),
@@ -60,62 +62,40 @@ class AdvancedSearchView extends StatelessWidget {
   }
 
   Widget _buildSearchBar(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        textAlign: TextAlign.right,
-        decoration: InputDecoration(
-          hintText: "ابحث بالاسم، رقم الشقة، أو السيارة...",
-          prefixIcon: Icon(Icons.search, color: colors.iconColor),
-          fillColor: colors.inputFill,
-          filled: true,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultsList(AppColors colors) {
-    return BlocBuilder<AdvancedSearchBloc, AdvancedSearchState>(
-      builder: (context, state) {
-        if (state.filteredResults.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text("لا توجد نتائج لـ ${state.selectedCategory}", style: TextStyle(color: colors.textSecondary)),
+    return Builder(
+      builder: (context) {
+        return Padding(
+          padding: AppSpacing.allMd,
+          child: TextField(
+            onChanged: (value) {
+              context.read<AdvancedSearchBloc>().add(SearchQueryChanged(value));
+            },
+            textAlign: TextAlign.right,
+            decoration: InputDecoration(
+              hintText: "ابحث بالاسم، رقم الشقة، أو البناية...",
+              prefixIcon: Icon(Icons.search, color: colors.iconColor),
+              fillColor: colors.inputFill,
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.xlRadius,
+                borderSide: BorderSide.none,
+              ),
             ),
-          );
-        }
-
-        return ListView.builder(
-          shrinkWrap: true, // لأنها داخل ListView أخرى أو Column
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: state.filteredResults.length,
-          itemBuilder: (context, index) {
-            final item = state.filteredResults[index];
-            return _buildResultItem(
-              colors,
-              item['title'],
-              item['sub'],
-              item['phone'],
-              item['icon'],
-              item['type'] == 'الشقق' ? colors.apartmentIconColor : Colors.blue,
-              item['tag'],
-            );
-          },
+          ),
         );
       },
     );
   }
 
   Widget _buildCategoryFilter(AppColors colors) {
-    List<String> categories = ["الكل", "الشقق", "السيارات", "الزوار", "اليوم"];
+    final List<String> categories = ["الكل", "الشقق", "السيارات", "أفراد العائلة", "جهات الطوارئ"];
 
     return BlocBuilder<AdvancedSearchBloc, AdvancedSearchState>(
       builder: (context, state) {
+        final String currentCategory = categories.contains(state.selectedCategory)
+            ? state.selectedCategory
+            : "الكل";
+
         return SizedBox(
           height: 45,
           child: ListView.builder(
@@ -123,37 +103,28 @@ class AdvancedSearchView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             itemCount: categories.length,
             itemBuilder: (context, index) {
-              // التحقق هل هذا العنصر هو المختار حالياً في الـ State
-              bool isSelected = state.selectedCategory == categories[index];
+              final categoryName = categories[index];
+              bool isSelected = currentCategory == categoryName;
 
               return GestureDetector(
                 onTap: () {
-                  // إرسال الحدث للـ Bloc عند الضغط
-                  context.read<AdvancedSearchBloc>().add(CategoryChanged(categories[index]));
+                  context.read<AdvancedSearchBloc>().add(CategoryChanged(categoryName));
                 },
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200), // تأثير ناعم عند الانتقال
-                  margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  duration: const Duration(milliseconds: 200),
+                  margin: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   decoration: BoxDecoration(
-                    // إذا كان مختاراً يأخذ اللون الأساسي، وإذا لا يكون شفافاً أو بلون خفيف
                     color: isSelected ? colors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppRadius.circularRadius,
                     border: Border.all(
                       color: isSelected ? colors.primary : colors.inputBorder,
                       width: 1.5,
                     ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: colors.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ] : [],
                   ),
                   child: Center(
                     child: Text(
-                      categories[index],
+                      categoryName,
                       style: TextStyle(
                         color: isSelected ? Colors.white : colors.textSecondary,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -169,74 +140,140 @@ class AdvancedSearchView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickSearchSection(AppColors colors) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle("بحث سريع", colors),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _quickSearchCard(colors, "رقم شقة", Icons.apartment, colors.apartmentIconBg, colors.apartmentIconColor),
-            _quickSearchCard(colors, "رقم سيارة", Icons.directions_car, colors.carIconBg, colors.carIconColor),
-            _quickSearchCard(colors, "هاتف ساكن", Icons.phone, colors.phoneIconBg, colors.phoneIconColor),
-          ],
-        ),
-      ],
+  Widget _buildResultsList(AppColors colors) {
+    return BlocBuilder<AdvancedSearchBloc, AdvancedSearchState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(30.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (state.errorMessage != null) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Text(state.errorMessage!, style: TextStyle(color: colors.accentRed)),
+            ),
+          );
+        }
+
+        final List<ResidentModel> displayList = (state.filteredResults as List<ResidentModel>?) ?? [];
+
+        if (displayList.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Text("لا توجد نتائج مطابقة", style: TextStyle(color: colors.textSecondary)),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: displayList.length,
+          itemBuilder: (context, index) {
+            final ResidentModel resident = displayList[index];
+
+            String mainTitle = resident.name;
+            String subTitle = resident.unitName;
+            IconData icon = Icons.person;
+            Color iconColor = colors.primary;
+
+            if (state.selectedCategory == 'الشقق') {
+              mainTitle = resident.unitName;
+              subTitle = resident.name;
+              icon = Icons.apartment;
+              iconColor = colors.apartmentIconColor;
+            } else if (state.selectedCategory == 'السيارات') {
+              mainTitle = resident.carPlate;
+              subTitle = resident.name;
+              icon = Icons.directions_car;
+              iconColor = Colors.orange;
+            } else if (state.selectedCategory == 'أفراد العائلة') {
+              mainTitle = resident.familyMembers.isNotEmpty
+                  ? (resident.familyMembers[0]['name'] ?? 'بدون اسم')
+                  : resident.name;
+              subTitle = "عائلة: ${resident.name}";
+              icon = Icons.group;
+              iconColor = Colors.purple;
+            } else if (state.selectedCategory == 'جهات الطوارئ') {
+              mainTitle = resident.emergencyContactName ?? 'لا توجد جهة اتصال';
+              subTitle = "${resident.name} (${resident.emergencyContactPhone ?? ''})";
+              icon = Icons.emergency;
+              iconColor = Colors.red;
+            }
+
+            return _buildResultItem(
+              colors,
+              mainTitle,
+              subTitle,
+              resident.phone,
+              icon,
+              iconColor,
+              resident.tag,
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _quickSearchCard(AppColors colors, String title, IconData icon, Color bg, Color iconColor) {
+  Widget _buildResultItem(
+      AppColors colors,
+      String title,
+      String subTitle,
+      String phone,
+      IconData icon,
+      Color iconColor,
+      String tag,
+      ) {
     return Container(
-      width: 105,
-      padding: const EdgeInsets.all(15),
+      margin: EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: AppSpacing.allSm,
       decoration: BoxDecoration(
         color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: iconColor),
-          ),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(color: colors.textMain, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultItem(AppColors colors, String title, String subTitle, String phone, IconData icon, Color iconColor, String tag) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: AppRadius.mdRadius,
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            padding: AppSpacing.allSm,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: AppRadius.smRadius,
+            ),
             child: Icon(icon, color: iconColor),
           ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: colors.textMain, fontWeight: FontWeight.bold)),
-              Text(subTitle, style: TextStyle(color: colors.textSecondary, fontSize: 11)),
-              if (phone.isNotEmpty) Text(phone, style: TextStyle(color: colors.textSecondary, fontSize: 11)),
-            ],
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: colors.textMain,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  subTitle,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: AppFontSizes.caption,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
-          _buildBadge(tag, tag == "ساكن" ? colors.accentGreen : Colors.orange),
-          const SizedBox(width: 10),
-          Icon(Icons.arrow_forward_ios_outlined, size: 14, color: colors.textSecondary),
+          const SizedBox(width: AppSpacing.sm),
+          _buildBadge(tag, tag == "مالك" ? Colors.orange : Colors.green),
         ],
       ),
     );
@@ -244,16 +281,32 @@ class AdvancedSearchView extends StatelessWidget {
 
   Widget _buildBadge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-      child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AppRadius.circularRadius,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: AppFontSizes.caption,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
   Widget _buildSectionTitle(String title, AppColors colors) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(title, style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.bold)),
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: colors.textSecondary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

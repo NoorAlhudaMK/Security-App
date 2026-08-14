@@ -7,6 +7,44 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:34283703414:android:dfd898c3b47b715e0ee357",
+        "android_client_info": {
+          "package_name": "com.example.maintenance_management_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMrft9kU6L0kgRhUYuXETeR4yUggj1pIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:34283703414:android:7b0b94d26501a5530ee357",
+        "android_client_info": {
+          "package_name": "com.example.residential_compound_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMrft9kU6L0kgRhUYuXETeR4yUggj1pIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:34283703414:android:fb087b0068305a140ee357",
         "android_client_info": {
           "package_name": "com.example.security_app"

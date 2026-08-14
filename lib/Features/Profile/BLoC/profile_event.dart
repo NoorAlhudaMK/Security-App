@@ -9,3 +9,5 @@ class ChangeLanguage extends ProfileEvent {
   final String lang;
   ChangeLanguage(this.lang);
 }
+
+class FetchShiftData extends ProfileEvent {}

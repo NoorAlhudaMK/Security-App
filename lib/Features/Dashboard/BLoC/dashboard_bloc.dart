@@ -1,27 +1,24 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../Core/Repository/dashboard_repository.dart';
+import '../../../Core/CacheManager/cache_manager.dart';
 import 'dashboard_event.dart';
 import 'dashboard_state.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  // نقوم بحقن الريبوزيتوري هنا (Dependency Injection)
-  final DashboardRepository repository;
+  DashboardBloc() : super(DashboardInitial()) {
+    on<FetchDashboardData>(_onFetchDashboardData);
+  }
 
-  DashboardBloc(this.repository) : super(DashboardInitial()) {
+  Future<void> _onFetchDashboardData(
+      FetchDashboardData event,
+      Emitter<DashboardState> emit,
+      ) async {
+    emit(DashboardLoading());
 
-    on<FetchDashboardData>((event, emit) async {
-      emit(DashboardLoading()); // إظهار مؤشر التحميل
-
-      try {
-        // طلب البيانات من الـ API عبر الـ Repository
-        final data = await repository.getDashboardStats();
-
-        emit(DashboardSuccess(data)); // إرسال البيانات للواجهة
-      } catch (e) {
-        // في حال حدوث خطأ (انقطاع إنترنت، خطأ سيرفر، إلخ)
-        emit(DashboardFailure("فشل في جلب البيانات: ${e.toString()}"));
-      }
-    });
+    try {
+      final user = await CacheManager.getUserModel();
+      emit(DashboardSuccess(user: user));
+    } catch (e) {
+      emit(DashboardFailure("فشل في جلب البيانات: ${e.toString()}"));
+    }
   }
 }
