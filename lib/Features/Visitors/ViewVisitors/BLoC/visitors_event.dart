@@ -1,7 +1,12 @@
 abstract class VisitorsEvent {}
 
-class FetchVisitors extends VisitorsEvent {}
+class FetchVisitors extends VisitorsEvent {
+  final int page;
+  final Map<String, dynamic>? filters;
+  final bool isPagination;
 
+  FetchVisitors({this.page = 1, this.filters, this.isPagination = false});
+}
 class ToggleScannerEvent extends VisitorsEvent {}
 
 class PickIdImageEvent extends VisitorsEvent {}

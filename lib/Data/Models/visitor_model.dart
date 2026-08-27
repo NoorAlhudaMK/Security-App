@@ -1,19 +1,19 @@
 class VisitorModel {
   final String id;
-  final String name;
+  final String? name;
   final String visitorName;
   final String visitorPhone;
-  final String visitorCount;
+  final String? visitorCount;
   final String visitType;
-  final String reason;
+  final String? reason;
   final String residentId;
-  final String residentName;
-  final String unitId;
-  final String unitName;
-  final String buildingId;
-  final String buildingName;
-  final String gateId;
-  final String gateName;
+  final String? residentName;
+  final String? unitId;
+  final String? unitName;
+  final String? buildingId;
+  final String? buildingName;
+  final String? gateId;
+  final String? gateName;
   final String validFrom;
   final String validTo;
   final String? visitDatetime;
@@ -26,20 +26,20 @@ class VisitorModel {
 
   VisitorModel({
     required this.id,
-    required this.name,
+    this.name,
     required this.visitorName,
     required this.visitorPhone,
-    required this.visitorCount,
+    this.visitorCount,
     required this.visitType,
-    required this.reason,
+    this.reason,
     required this.residentId,
-    required this.residentName,
-    required this.unitId,
-    required this.unitName,
-    required this.buildingId,
-    required this.buildingName,
-    required this.gateId,
-    required this.gateName,
+    this.residentName,
+    this.unitId,
+    this.unitName,
+    this.buildingId,
+    this.buildingName,
+    this.gateId,
+    this.gateName,
     required this.validFrom,
     required this.validTo,
     this.visitDatetime,
@@ -54,29 +54,29 @@ class VisitorModel {
   factory VisitorModel.fromJson(Map<String, dynamic> json) {
     return VisitorModel(
       id: json['id'].toString(),
-      name: json['name'].toString(),
+      name: json['name']?.toString(),
       visitorName: json['visitor_name'].toString(),
       visitorPhone: json['visitor_phone'].toString(),
-      visitorCount: json['visitor_count'].toString(),
+      visitorCount: json['visitor_count']?.toString(),
       visitType: json['visit_type'].toString(),
-      reason: json['reason'].toString(),
+      reason: json['reason']?.toString(),
       residentId: json['resident_id'].toString(),
-      residentName: json['resident_name'].toString(),
-      unitId: json['unit_id'].toString(),
-      unitName: json['unit_name'].toString(),
-      buildingId: json['building_id'].toString(),
-      buildingName: json['building_name'].toString(),
-      gateId: json['gate_id'].toString(),
-      gateName: json['gate_name'].toString(),
+      residentName: json['resident_name']?.toString(),
+      unitId: json['unit_id']?.toString(),
+      unitName: json['unit_name']?.toString(),
+      buildingId: json['building_id']?.toString(),
+      buildingName: json['building_name']?.toString(),
+      gateId: json['gate_id']?.toString(),
+      gateName: json['gate_name']?.toString(),
       validFrom: json['valid_from'].toString(),
       validTo: json['valid_to'].toString(),
-      visitDatetime: json['visit_datetime']?.toString(), // ⬅️ استخدام ?. لتجنب الـ null
-      hasCar: json['has_car'] ?? false,                 // ⬅️ وضع قيمة افتراضية للـ boolean
-      carPlate: json['car_plate']?.toString(),          // ⬅️ استخدام ?.
+      visitDatetime: json['visit_datetime']?.toString(),
+      hasCar: json['has_car'] ?? false,
+      carPlate: json['car_plate']?.toString(),
       qrToken: json['qr_token'].toString(),
       status: json['status'].toString(),
-      checkedInAt: json['checked_in_at']?.toString(),   // ⬅️ استخدام ?.
-      checkedOutAt: json['checked_out_at']?.toString(), // ⬅️ استخدام ?.
+      checkedInAt: json['checked_in_at']?.toString(),
+      checkedOutAt: json['checked_out_at']?.toString(),
     );
   }
 }

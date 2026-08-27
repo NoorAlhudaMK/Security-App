@@ -8,6 +8,7 @@ import '../../../Core/UIConstants/aivio_font_sizes.dart';
 import '../../../Core/UIConstants/aivio_icon_sizes.dart';
 import '../../../Core/UIConstants/aivio_spacing.dart';
 import '../../../Data/Repository/visitors_repository.dart';
+import '../../Notification/View/notification_view.dart';
 import '../../Visitors/AddNewVisitor/View/add_new_visitor.dart';
 import '../../Visitors/CheckInQRScanner/BLoC/visitor_check_in_bloc.dart';
 import '../../Visitors/CheckInQRScanner/View/check_in_qr_scanner_page.dart';
@@ -27,59 +28,96 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors();
 
-    return SafeArea(
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => DashboardBloc()..add(FetchDashboardData()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => DashboardBloc()..add(FetchDashboardData()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              VisitorsBloc(VisitorsRepository())..add(FetchVisitors()),
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: colors.scaffoldBackground,
+        appBar: AppBar(
+          backgroundColor: colors.scaffoldBackground,
+          title: Text(
+            "بــوابــة الأمــن",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: colors.textMain,
+            ),
           ),
-          BlocProvider(
-            create: (context) =>
-                VisitorsBloc(VisitorsRepository())..add(FetchVisitors()),
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          automaticallyImplyActions: false,
+          leading: IconButton(
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+            icon: Icon(Icons.menu),
           ),
-        ],
-        child: BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, dashboardState) {
-            if (dashboardState is DashboardLoading ||
-                dashboardState is DashboardInitial) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NotificationView()),
+                );
+              },
+              icon: Icon(
+                Icons.notifications_none_outlined,
+                color: colors.textMain,
+                size: AppIconSizes.md,
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: BlocBuilder<DashboardBloc, DashboardState>(
+            builder: (context, dashboardState) {
+              if (dashboardState is DashboardLoading ||
+                  dashboardState is DashboardInitial) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (dashboardState is DashboardFailure) {
-              return _buildErrorWidget(
-                dashboardState.errorMessage,
-                context,
-                colors,
-              );
-            }
+              if (dashboardState is DashboardFailure) {
+                return _buildErrorWidget(
+                  dashboardState.errorMessage,
+                  context,
+                  colors,
+                );
+              }
 
-            if (dashboardState is DashboardSuccess) {
-              final user = dashboardState.user;
-              final userName = user.name;
-              final gatesValue = user.assignedGates.length.toString();
-              final buildingValue = user.buildings.length.toString();
+              if (dashboardState is DashboardSuccess) {
+                final user = dashboardState.user;
+                final userName = user.name;
+                final gatesValue = user.assignedGates.length.toString();
+                final buildingValue = user.buildings.length.toString();
 
-              return BlocBuilder<VisitorsBloc, VisitorsState>(
-                builder: (context, visitorsState) {
-                  int visitorsCount = 0;
-                  if (visitorsState is VisitorsLoaded) {
-                    visitorsCount = visitorsState.visitors.length;
-                  }
+                return BlocBuilder<VisitorsBloc, VisitorsState>(
+                  builder: (context, visitorsState) {
+                    int visitorsCount = 0;
+                    if (visitorsState is VisitorsLoaded) {
+                      visitorsCount = visitorsState.visitors.length;
+                    }
 
-                  return _buildDashboardContent(
-                    context,
-                    colors,
-                    gatesValue,
-                    buildingValue,
-                    visitorsCount,
-                    userName,
-                  );
-                },
-              );
-            }
+                    return _buildDashboardContent(
+                      context,
+                      colors,
+                      gatesValue,
+                      buildingValue,
+                      visitorsCount,
+                      userName,
+                    );
+                  },
+                );
+              }
 
-            return const SizedBox.shrink();
-          },
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
     );
@@ -97,8 +135,7 @@ class DashboardView extends StatelessWidget {
       padding: AppSpacing.symmetricH,
       child: Column(
         children: [
-          _buildTopBar(colors),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
           _buildWelcomeHeader(colors, username),
           const SizedBox(height: AppSpacing.lg),
           Row(
@@ -196,58 +233,8 @@ class DashboardView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                // _buildRecentActivityHeader(colors),
-                // _buildActivityList(colors),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar(AppColors colors) {
-    return Padding(
-      padding: EdgeInsets.only(top: AppSpacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: AppSpacing.allSm,
-                decoration: BoxDecoration(
-                  color: colors.primary,
-                  borderRadius: AppRadius.mdRadius,
-                ),
-                child: const Icon(Icons.security, color: Colors.white),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "بوابة الأمن",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colors.textMain,
-                    ),
-                  ),
-                  Text(
-                    "شفت الصباح",
-                    style: TextStyle(
-                      fontSize: AppFontSizes.bodySmall,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Icon(
-            Icons.notifications_none_outlined,
-            color: colors.textMain,
-            size: AppIconSizes.lg,
           ),
         ],
       ),
@@ -257,29 +244,42 @@ class DashboardView extends StatelessWidget {
   Widget _buildWelcomeHeader(AppColors colors, String userName) {
     return Align(
       alignment: Alignment.centerRight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
+          Container(
+            padding: AppSpacing.allSm,
+            decoration: BoxDecoration(
+              color: colors.primary,
+              borderRadius: AppRadius.mdRadius,
+            ),
+            child: const Icon(Icons.security, color: Colors.white),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "مساء الخير، $userName",
-                style: TextStyle(
-                  fontSize: AppFontSizes.headingLarge,
-                  fontWeight: FontWeight.bold,
-                  color: colors.textMain,
-                ),
+              Row(
+                children: [
+                  Text(
+                    "مساء الخير، $userName",
+                    style: TextStyle(
+                      fontSize: AppFontSizes.headingLarge,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textMain,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const Text(
+                    "👋",
+                    style: TextStyle(fontSize: AppFontSizes.headingLarge),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              const Text(
-                "👋",
-                style: TextStyle(fontSize: AppFontSizes.headingLarge),
+              Text(
+                getArabicFormattedDate(),
+                style: TextStyle(color: colors.textSecondary),
               ),
             ],
-          ),
-          Text(
-            getArabicFormattedDate(),
-            style: TextStyle(color: colors.textSecondary),
           ),
         ],
       ),
@@ -382,74 +382,6 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivityHeader(AppColors colors) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          "آخر النشاطات",
-          style: TextStyle(
-            fontSize: AppFontSizes.headingSmall,
-            fontWeight: FontWeight.bold,
-            color: colors.textMain,
-          ),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: Text("عرض الكل", style: TextStyle(color: colors.primary)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActivityList(AppColors colors) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 2,
-      itemBuilder: (context, index) {
-        bool isEntry = index == 0;
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Container(
-            padding: AppSpacing.allSm,
-            decoration: BoxDecoration(
-              color: isEntry
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.red.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isEntry ? Icons.login : Icons.logout,
-              color: isEntry ? Colors.green : Colors.red,
-              size: AppIconSizes.sm,
-            ),
-          ),
-          title: Text(
-            isEntry ? "أحمد الزهراني" : "سارة المطيري",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: colors.textMain,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          subtitle: Text(
-            isEntry ? "شقة 104 - زائر" : "شقة 205 - ساكن",
-            style: TextStyle(fontSize: AppFontSizes.bodySmall),
-            textAlign: TextAlign.right,
-          ),
-          trailing: Text(
-            isEntry ? "4:30 م" : "4:15 م",
-            style: TextStyle(
-              color: colors.textSecondary,
-              fontSize: AppFontSizes.bodySmall,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildErrorWidget(
     String message,
     BuildContext context,
@@ -475,11 +407,5 @@ class DashboardView extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-extension on VisitorsRepository {
-  void let(void Function(VisitorsRepository it) callback) {
-    callback(this);
   }
 }

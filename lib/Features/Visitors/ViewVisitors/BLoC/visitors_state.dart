@@ -15,7 +15,6 @@ abstract class VisitorsState extends Equatable {
     this.lastScannedCode,
   });
 
-  // أضفنا هذه الدالة لتكون متاحة لأي state
   VisitorsState copyWith({
     bool? isScanning,
     File? visitorIdImage,
@@ -50,26 +49,34 @@ class VisitorsLoading extends VisitorsState {
 
 class VisitorsLoaded extends VisitorsState {
   final List<VisitorModel> visitors;
+  final bool hasMore;
+  final int currentPage;
 
   const VisitorsLoaded(
-    this.visitors, {
-    super.isScanning,
-    super.visitorIdImage,
-    super.lastScannedCode,
-  });
+      this.visitors, {
+        this.hasMore = true,
+        this.currentPage = 1,
+        super.isScanning,
+        super.visitorIdImage,
+        super.lastScannedCode,
+      });
 
   @override
-  List<Object?> get props => [visitors, ...super.props];
+  List<Object?> get props => [visitors, hasMore, currentPage, ...super.props];
 
   @override
   VisitorsLoaded copyWith({
     List<VisitorModel>? visitors,
+    bool? hasMore,
+    int? currentPage,
     bool? isScanning,
     File? visitorIdImage,
     String? lastScannedCode,
   }) {
     return VisitorsLoaded(
       visitors ?? this.visitors,
+      hasMore: hasMore ?? this.hasMore,
+      currentPage: currentPage ?? this.currentPage,
       isScanning: isScanning ?? this.isScanning,
       visitorIdImage: visitorIdImage ?? this.visitorIdImage,
       lastScannedCode: lastScannedCode ?? this.lastScannedCode,
