@@ -10,6 +10,7 @@ import '../../../Core/UIConstants/aivio_spacing.dart';
 import '../../../Data/Models/user_model.dart';
 import '../../../Data/Repository/auth_repository.dart';
 import '../../../Data/Repository/visitors_repository.dart';
+import '../../AboutApp/View/about_app.dart';
 import '../../Auth/Bloc/auth_bloc.dart';
 import '../../Auth/Bloc/auth_event.dart';
 import '../../Auth/Bloc/auth_state.dart';
@@ -206,7 +207,6 @@ class MainHomePage extends StatelessWidget {
 
           Divider(color: colors.textSecondary,),
 
-          // صفحات أو عناصر إضافية (مثل سجل النشاطات)
           ListTile(
             leading: Icon(
               Icons.input,
@@ -229,7 +229,6 @@ class MainHomePage extends StatelessWidget {
                         VisitorCheckInBloc(VisitorsRepository()),
                     child: CheckInQrScannerPage(
                       gateId: 1,
-
                       /// TODO: استبدل الرقم برقم البوابة الفعلي
                     ),
                   ),
@@ -259,7 +258,6 @@ class MainHomePage extends StatelessWidget {
                         VisitorCheckOutBloc(VisitorsRepository()),
                     child: CheckOutQrScannerPage(
                       gateId: 1,
-
                       /// TODO: استبدل الرقم برقم البوابة الفعلي
                     ),
                   ),
@@ -268,6 +266,22 @@ class MainHomePage extends StatelessWidget {
             },
           ),
 
+          Divider(color: colors.textSecondary,),
+          ListTile(
+            leading: Icon(Icons.info_outline,  color: colors.textSecondary, size: AppIconSizes.md),
+            title: Text(
+              'حول التطبيق',
+              style: TextStyle(color: colors.textSecondary, fontSize: AppFontSizes.bodyMedium),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AboutSecurityAppPage(),
+                ),
+              );
+            },
+          ),
           Divider(color: colors.textSecondary,),
 
           ListTile(

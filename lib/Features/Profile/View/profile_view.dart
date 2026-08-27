@@ -7,6 +7,7 @@ import '../../../Core/UIConstants/aivio_border_radius.dart';
 import '../../../Core/UIConstants/aivio_font_sizes.dart';
 import '../../../Core/UIConstants/aivio_icon_sizes.dart';
 import '../../../Core/UIConstants/aivio_spacing.dart';
+import '../../Notification/View/notification_view.dart';
 import '../BLoC/profile_bloc.dart';
 import '../BLoC/profile_event.dart';
 import '../BLoC/profile_state.dart';
@@ -62,6 +63,40 @@ class _ProfileViewState extends State<ProfileView> {
           textDirection: TextDirection.rtl,
           child: Scaffold(
             backgroundColor: colors.scaffoldBackground,
+            appBar: AppBar(
+              backgroundColor: colors.scaffoldBackground,
+              title: Text(
+                "الــمــلــف الــشــخــصــي",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textMain,
+                ),
+              ),
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              automaticallyImplyActions: false,
+              leading: IconButton(
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                icon: Icon(Icons.menu),
+              ),
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => NotificationView()),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.notifications_none_outlined,
+                    color: colors.textMain,
+                    size: AppIconSizes.md,
+                  ),
+                ),
+              ],
+            ),
             body: SafeArea(
               child: state.isLoading
                   ? const Center(child: CircularProgressIndicator())

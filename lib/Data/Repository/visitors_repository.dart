@@ -6,9 +6,28 @@ import '../../Core/AppConstants/app_constants.dart';
 import '../Models/visitor_model.dart';
 
 class VisitorsRepository {
-  Future<List<VisitorModel>> getVisitors(String token) async {
+  Future<Map<String, dynamic>> getVisitors(
+      String token, {
+        int page = 1,
+        String? status,
+        String? dateFrom,
+        String? dateTo,
+        Map<String, dynamic>? filters,
+      }) async {
+    final Map<String, String> queryParams = {
+      'page': page.toString(),
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+      if (filters != null)
+        ...filters.map((key, value) => MapEntry(key, value.toString())),
+    };
+
+    final uri = Uri.parse('${AppConstants.baseUrl}/api/v1/security/expected-visitors')
+        .replace(queryParameters: queryParams);
+
     final response = await http.get(
-      Uri.parse('${AppConstants.baseUrl}/api/user/get_visitor'),
+      uri,
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
@@ -23,7 +42,15 @@ class VisitorsRepository {
       final data = jsonDecode(response.body);
       if (data['success'].toString() == "true" && data['data'] != null) {
         final List<dynamic> visitorsList = data['data']['visitors'];
-        return visitorsList.map((json) => VisitorModel.fromJson(json)).toList();
+        final List<VisitorModel> visitors =
+        visitorsList.map((json) => VisitorModel.fromJson(json)).toList();
+
+        final pagination = data['data']['pagination'];
+        return {
+          'visitors': visitors,
+          'has_next': pagination['has_next'] ?? false,
+          'page': pagination['page'] ?? page,
+        };
       } else {
         throw Exception(data['message'] ?? "فشل في جلب قائمة الزوار");
       }
@@ -33,7 +60,7 @@ class VisitorsRepository {
   }
 
   Future<VisitorModel> addVisitor(String token, Map<String, dynamic> data) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/api/user/add_new_visitor');
+    final url = Uri.parse('${AppConstants.baseUrl}/api/v1/user/add_new_visitor');
     final response = await http.post(
       url,
       headers: {

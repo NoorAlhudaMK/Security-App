@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../Core/CacheManager/cache_manager.dart';
 import '../../../../Core/Colors/app_colors.dart';
+import '../../../../Data/Models/visitor_model.dart';
 import '../../../../Data/Repository/visitors_repository.dart';
 import 'visitors_event.dart';
 import 'visitors_state.dart';
@@ -20,13 +21,34 @@ class VisitorsBloc extends Bloc<VisitorsEvent, VisitorsState> {
       : super(const VisitorsInitial()) {
     on<FetchVisitors>((event, emit) async {
       final currentScanning = state.isScanning;
-      emit(const VisitorsLoading());
+
+      if (!event.isPagination) {
+        emit(const VisitorsLoading());
+      }
 
       try {
         final token = await CacheManager.getToken();
-        final visitors = await repository.getVisitors(token ?? "");
+        final result = await repository.getVisitors(
+          token ?? "",
+          page: event.page,
+          filters: event.filters,
+        );
 
-        emit(VisitorsLoaded(visitors, isScanning: currentScanning));
+        final List<VisitorModel> newVisitors = result['visitors'];
+        final bool hasNext = result['has_next'];
+
+        List<VisitorModel> allVisitors = newVisitors;
+        if (event.isPagination && state is VisitorsLoaded) {
+          final oldVisitors = (state as VisitorsLoaded).visitors;
+          allVisitors = [...oldVisitors, ...newVisitors];
+        }
+
+        emit(VisitorsLoaded(
+          allVisitors,
+          hasMore: hasNext,
+          currentPage: event.page,
+          isScanning: currentScanning,
+        ));
       } catch (e) {
         emit(VisitorsError(e.toString()));
       }

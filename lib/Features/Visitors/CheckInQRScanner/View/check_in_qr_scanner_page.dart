@@ -13,16 +13,28 @@ import '../BLoC/visitor_check_in_bloc.dart';
 import '../BLoC/visitor_check_in_event.dart';
 import '../BLoC/visitor_check_in_state.dart';
 
-class CheckInQrScannerPage extends StatelessWidget {
+class CheckInQrScannerPage extends StatefulWidget {
   final int gateId;
+
+  const CheckInQrScannerPage({Key? key, required this.gateId}) : super(key: key);
+
+  @override
+  State<CheckInQrScannerPage> createState() => _CheckInQrScannerPageState();
+}
+
+class _CheckInQrScannerPageState extends State<CheckInQrScannerPage> {
   final AppColors appColors = AppColors();
-
-  CheckInQrScannerPage({Key? key, required this.gateId}) : super(key: key);
-
   final TextEditingController _manualCodeController = TextEditingController();
   final MobileScannerController _scannerController = MobileScannerController(autoStart: false);
-
   final ValueNotifier<bool> isScanningActive = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    isScanningActive.dispose();
+    _manualCodeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +73,8 @@ class CheckInQrScannerPage extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
               );
-
               _scannerController.stop();
-
-              Navigator.pop(
-                context,
-              );
+              Navigator.pop(context);
             } else if (state is VisitorCheckInFailureState) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -84,7 +92,6 @@ class CheckInQrScannerPage extends StatelessWidget {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // 1. منطقة الكاميرا والماسح
                     Container(
                       height: 320,
                       width: double.infinity,
@@ -96,7 +103,6 @@ class CheckInQrScannerPage extends StatelessWidget {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // التبديل بين إظهار الكاميرا أو الـ Placeholder مع الـ GridPainter
                           ValueListenableBuilder<bool>(
                             valueListenable: isScanningActive,
                             builder: (context, active, child) {
@@ -105,9 +111,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                                   width: double.infinity,
                                   height: double.infinity,
                                   color: const Color(0xFF1E242B),
-                                  child: CustomPaint(
-                                    painter: GridPainter(),
-                                  ),
+                                  child: CustomPaint(painter: GridPainter()),
                                 );
                               }
                               return MobileScanner(
@@ -126,7 +130,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                                           SubmitVisitorCheckInEvent(
                                             token: token,
                                             qrToken: code,
-                                            gateId: gateId,
+                                            gateId: widget.gateId,
                                           ),
                                         );
                                       }
@@ -137,11 +141,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                               );
                             },
                           ),
-
-                          // زوايا الماسح البرتقالية
                           _buildScannerCorners(),
-
-                          // مؤشر حالة الماسح في الأسفل
                           Positioned(
                             bottom: 16,
                             child: ValueListenableBuilder<bool>(
@@ -165,7 +165,6 @@ class CheckInQrScannerPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -192,13 +191,8 @@ class CheckInQrScannerPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-
-                    const Text(
-                      "أو أدخل الرمز يدوياً",
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
+                    const Text("أو أدخل الرمز يدوياً", style: TextStyle(color: Colors.grey, fontSize: 13)),
                     const SizedBox(height: AppSpacing.sm),
-
                     Row(
                       children: [
                         Expanded(
@@ -208,10 +202,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                               hintText: "أدخل الرمز هنا...",
                               filled: true,
                               fillColor: appColors.cardBackground,
-                              border: OutlineInputBorder(
-                                borderRadius: AppRadius.mdRadius,
-                                borderSide: BorderSide.none,
-                              ),
+                              border: OutlineInputBorder(borderRadius: AppRadius.mdRadius, borderSide: BorderSide.none),
                             ),
                           ),
                         ),
@@ -219,20 +210,8 @@ class CheckInQrScannerPage extends StatelessWidget {
                         SizedBox(
                           height: 55,
                           child: ElevatedButton(
-                            onPressed: isLoading
-                                ? null
-                                : () async {
+                            onPressed: isLoading ? null : () async {
                               final code = _manualCodeController.text.trim();
-                              if (code.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text("يرجى إدخال كود الخروج أولاً"),
-                                    backgroundColor: appColors.accentRed,
-                                  ),
-                                );
-                                return;
-                              }
-
                               if (code.isNotEmpty) {
                                 final token = await CacheManager.getToken();
                                 if (token != null && context.mounted) {
@@ -240,7 +219,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                                     SubmitVisitorCheckInEvent(
                                       token: token,
                                       qrToken: code,
-                                      gateId: gateId,
+                                      gateId: widget.gateId,
                                     ),
                                   );
                                 }
@@ -253,11 +232,7 @@ class CheckInQrScannerPage extends StatelessWidget {
                               shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
                             ),
                             child: isLoading
-                                ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                 : const Text("دخول"),
                           ),
                         ),
@@ -288,36 +263,17 @@ class CheckInQrScannerPage extends StatelessWidget {
     );
   }
 
-  Widget _corner({
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required bool isTop,
-    required bool isLeft,
-  }) {
+  Widget _corner({double? top, double? bottom, double? left, double? right, required bool isTop, required bool isLeft}) {
     return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
+      top: top, bottom: bottom, left: left, right: right,
       child: Container(
-        width: 30,
-        height: 30,
+        width: 30, height: 30,
         decoration: BoxDecoration(
           border: Border(
-            top: isTop
-                ? const BorderSide(color: Colors.orange, width: 4)
-                : BorderSide.none,
-            bottom: !isTop
-                ? const BorderSide(color: Colors.orange, width: 4)
-                : BorderSide.none,
-            left: isLeft
-                ? const BorderSide(color: Colors.orange, width: 4)
-                : BorderSide.none,
-            right: !isLeft
-                ? const BorderSide(color: Colors.orange, width: 4)
-                : BorderSide.none,
+            top: isTop ? const BorderSide(color: Colors.orange, width: 4) : BorderSide.none,
+            bottom: !isTop ? const BorderSide(color: Colors.orange, width: 4) : BorderSide.none,
+            left: isLeft ? const BorderSide(color: Colors.orange, width: 4) : BorderSide.none,
+            right: !isLeft ? const BorderSide(color: Colors.orange, width: 4) : BorderSide.none,
           ),
         ),
       ),

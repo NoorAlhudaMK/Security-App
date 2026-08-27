@@ -151,4 +151,33 @@ class AuthRepository {
       throw Exception('فشل الاتصال بالسيرفر أثناء تسجيل الخروج');
     }
   }
+
+  Future<String> forgotPassword(String email) async {
+    final url = Uri.parse('${AppConstants.baseUrl}/api/v1/auth/forgot-password');
+    final headers = {"Content-Type": "application/json"};
+    final body = jsonEncode({
+      "email": email,
+    });
+
+    if (kDebugMode) {
+      print("FORGOT PASSWORD REQUEST -> URL: $url");
+      print("FORGOT PASSWORD REQUEST -> Headers: $headers");
+      print("FORGOT PASSWORD REQUEST -> Body: $body");
+    }
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    if (kDebugMode) {
+      print("FORGOT PASSWORD RESPONSE -> Status: ${response.statusCode}");
+      print("FORGOT PASSWORD RESPONSE -> Body: ${response.body}");
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['message'] ?? "تم إرسال تعليمات استعادة كلمة المرور بنجاح.";
+    } else {
+      throw Exception(data['message'] ?? "فشل في إرسال طلب استعادة كلمة المرور");
+    }
+  }
 }
